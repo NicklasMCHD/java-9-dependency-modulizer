@@ -1,8 +1,9 @@
-import os, sys, subprocess, zipfile, shutil
+import os, sys, subprocess, zipfile, shutil, json, urllib2
 from xml.etree import ElementTree as et
 
 def cleanup():
-	shutil.rmtree(temp)
+	shutil.rmtree("temp")
+	os.rm("module-info.java")
 
 def zipdir(path, ziph):
 	# ziph is zipfile handle
@@ -115,6 +116,7 @@ else:
 	cleanup()
 	sys.exit()
 
+old_working_dir = os.getcwd()
 os.chdir("temp"+os.sep+"original"+os.sep)
 
 print "Packing the modular jar"
@@ -130,3 +132,13 @@ zipdir(".", zipf)
 zipf.close()
 
 print "Packaged modular jar"
+
+os.chdir(old_working_dir)
+print "Done"
+overwrite = raw_input("Do you wan't to overwrite the new jar with the old one? (y/n)")
+if overwrite == "y":
+	shutil.copyfile("temp"+os.sep+"original"+os.sep+modular_jar, jar)
+else:
+	shutil.copy("temp"+os.sep+"original"+os.sep+modular_jar, ".")
+
+cleanup()

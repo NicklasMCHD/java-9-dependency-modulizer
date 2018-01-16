@@ -1,7 +1,7 @@
 # Compiled class file
 *.class
 module-info.java
-maven-repository.xml
+repository.json
 temp/**
 
 # Log file
