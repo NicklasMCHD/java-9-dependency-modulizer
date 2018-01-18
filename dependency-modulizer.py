@@ -1,9 +1,11 @@
-import os, sys, subprocess, zipfile, shutil, json, urllib2
+import os, sys, time, subprocess, zipfile, shutil, json, urllib2
 from xml.etree import ElementTree as et
 
+ERROR_STR= """Error removing %(path)s, %(error)s """
+
 def cleanup():
-	shutil.rmtree("temp")
-	os.rm("module-info.java")
+	shutil.rmtree("temp/")
+	os.remove("module-info.java")
 
 def zipdir(path, ziph):
 	# ziph is zipfile handle
@@ -13,15 +15,15 @@ def zipdir(path, ziph):
 				continue;
 			ziph.write(os.path.join(root, file))
 
-if len(sys.argv) != 2:
+if len(sys.argv) != 3:
 	print "Not enough arguments."
-	print sys.argv[0] + " [jar] <new-dependency-name>"
+	print sys.argv[0] + " [jar] [Should overwrite existing jar(y/n)]"
 	sys.exit()
 
 jar = sys.argv[1]
 
 # unpack jar
-print "Unpacking jar: " + jar
+print "Unpacking jar " + jar
 zf = zipfile.ZipFile(jar)
 zf.extractall(path = "temp" + os.sep + "original")
 zf.close()
@@ -60,7 +62,7 @@ print "Artifact ID: " + artifact_id
 print "Version: " + version
 
 # Get module information from java
-print "Getting automatics module information from the current jar file"
+print "Getting automatics module information from the current jar file " +jar
 command = subprocess.check_output('jar --file ' + jar + ' --describe-module')
 java_command = command.split("\n")
 
@@ -74,7 +76,7 @@ for java_command_line in java_command:
 	module_info.append(java_command_line)
 
 # This is the code holding the java code (module-info.class)
-print "Creating the module-information file"
+print "Creating the module-information file for " + jar
 module_info_java_code = ""
 
 # Parse the module_info and write it to the module_info_java_code
@@ -122,8 +124,8 @@ os.chdir("temp"+os.sep+"original"+os.sep)
 print "Packing the modular jar"
 
 modular_jar = ""
-if len(sys.argv) == 3:
-	modular_jar = sys.argv[2] + "-" + version + ".jar"
+if len(sys.argv) == 4:
+	modular_jar = sys.argv[3] + "-" + version + ".jar"
 else:
 	modular_jar = "x "+jar
 
@@ -131,14 +133,15 @@ zipf = zipfile.ZipFile(modular_jar, 'w', zipfile.ZIP_DEFLATED, allowZip64 = True
 zipdir(".", zipf)
 zipf.close()
 
-print "Packaged modular jar"
+print "Packaged modular jar in " + modular_jar
 
 os.chdir(old_working_dir)
 print "Done"
-overwrite = raw_input("Do you wan't to overwrite the new jar with the old one? (y/n)")
-if overwrite == "y":
+if sys.argv[2] == "y":
+	print "Replacing " + jar + " with modulized jar " + modular_jar
 	shutil.copyfile("temp"+os.sep+"original"+os.sep+modular_jar, jar)
 else:
+	print "Modular jar placed in " + modular_jar
 	shutil.copy("temp"+os.sep+"original"+os.sep+modular_jar, ".")
 
 cleanup()
