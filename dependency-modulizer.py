@@ -93,6 +93,8 @@ for module_info_line in module_info:
 	keyword = module_requirements[0]
 	value = module_requirements[1]
 	# replace contain with exports
+	if keyword == "main-class":
+		continue
 	if keyword == "contains":
 		keyword = "exports"
 	module_info_java_code = module_info_java_code + keyword + " " + value + ";\n"
